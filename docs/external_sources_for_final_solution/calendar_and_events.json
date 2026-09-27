@@ -146,6 +146,5 @@
       "source_id": "routes_7_50_late_weekend_restriction",
       "evidence_type": "external_event_plus_model_assumption"
     }
-  ],
-  "usage_note": "All listed effects are already materialized in the forecast CSV. Do not apply them twice. Weather, traffic and disruption archives were not selected for final v3."
+  ]
 }
