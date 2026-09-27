@@ -1,0 +1,84 @@
+{
+  "test_date": "2026-09-28",
+  "server": {
+    "framework": "FastAPI 0.141.1",
+    "asgi_server": "Uvicorn 0.54.0",
+    "workers": 1,
+    "access_log": false,
+    "forecast_rows_in_memory": 14640
+  },
+  "environment": {
+    "device": "MacBook Air",
+    "chip": "Apple M2",
+    "logical_cpu_cores": 8,
+    "ram_gb": 8,
+    "os": "macOS 26.6 arm64",
+    "python": "3.13.5",
+    "transport": "HTTP loopback 127.0.0.1; no TLS or reverse proxy"
+  },
+  "total_requests": 9650,
+  "total_failed": 0,
+  "scenarios": [
+    {
+      "name": "health",
+      "requests": 5000,
+      "concurrency": 100,
+      "throughput_rps": 3001.86,
+      "p50_ms": 30.251,
+      "p95_ms": 49.227,
+      "p99_ms": 68.401,
+      "failed": 0,
+      "peak_rss_mb": 118.52
+    },
+    {
+      "name": "typical_mixed_api",
+      "requests": 4000,
+      "concurrency": 50,
+      "throughput_rps": 646.49,
+      "p50_ms": 78.631,
+      "p95_ms": 97.28,
+      "p99_ms": 109.251,
+      "failed": 0,
+      "peak_rss_mb": 133.98
+    },
+    {
+      "name": "full_forecast_14640_rows",
+      "requests": 100,
+      "concurrency": 5,
+      "throughput_rps": 64.77,
+      "p50_ms": 77.389,
+      "p95_ms": 93.147,
+      "p99_ms": 107.314,
+      "failed": 0,
+      "peak_rss_mb": 152.22
+    },
+    {
+      "name": "csv_export_one_route_one_month",
+      "requests": 500,
+      "concurrency": 20,
+      "throughput_rps": 369.57,
+      "p50_ms": 53.417,
+      "p95_ms": 63.245,
+      "p99_ms": 69.254,
+      "failed": 0,
+      "peak_rss_mb": 165.02
+    },
+    {
+      "name": "xlsx_export_one_route_one_month",
+      "requests": 50,
+      "concurrency": 3,
+      "throughput_rps": 28.62,
+      "p50_ms": 102.801,
+      "p95_ms": 119.578,
+      "p99_ms": 130.969,
+      "failed": 0,
+      "peak_rss_mb": 172.28
+    }
+  ],
+  "optimization": {
+    "change": "Vectorized pandas JSON serialization for /forecast",
+    "full_forecast_p95_before_ms": 1990.907,
+    "full_forecast_p95_after_ms": 93.147,
+    "p95_speedup": 21.37
+  }
+}

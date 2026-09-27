@@ -1,0 +1,39 @@
+{
+  "scenario": "full_forecast",
+  "base_url": "http://127.0.0.1:8765",
+  "paths": [
+    "/forecast"
+  ],
+  "requests": 100,
+  "concurrency": 5,
+  "wall_seconds": 35.5791,
+  "throughput_rps": 2.81,
+  "latency_ms": {
+    "min": 1134.26,
+    "mean": 1765.337,
+    "p50": 1792.056,
+    "p95": 1990.907,
+    "p99": 2087.217,
+    "max": 2092.134
+  },
+  "responses": {
+    "success": 100,
+    "failed": 0,
+    "status_counts": {
+      "200": 100
+    },
+    "error_counts": {},
+    "total_bytes": 89418400,
+    "mean_bytes": 894184.0
+  },
+  "resources": {
+    "server_rss_peak_mb": 173.94,
+    "server_cpu_mean_percent": 100.28,
+    "server_cpu_peak_percent": 112.9
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "logical_cpu_count": 8
+  }
+}

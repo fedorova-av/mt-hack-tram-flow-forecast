@@ -1,0 +1,39 @@
+{
+  "scenario": "xlsx_export",
+  "base_url": "http://127.0.0.1:8765",
+  "paths": [
+    "/export/xlsx?route=7&date_from=2025-11-01&date_to=2025-11-30"
+  ],
+  "requests": 50,
+  "concurrency": 3,
+  "wall_seconds": 1.7471,
+  "throughput_rps": 28.62,
+  "latency_ms": {
+    "min": 71.783,
+    "mean": 103.183,
+    "p50": 102.801,
+    "p95": 119.578,
+    "p99": 130.969,
+    "max": 131.078
+  },
+  "responses": {
+    "success": 50,
+    "failed": 0,
+    "status_counts": {
+      "200": 50
+    },
+    "error_counts": {},
+    "total_bytes": 897903,
+    "mean_bytes": 17958.1
+  },
+  "resources": {
+    "server_rss_peak_mb": 172.28,
+    "server_cpu_mean_percent": 106.26,
+    "server_cpu_peak_percent": 111.9
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "logical_cpu_count": 8
+  }
+}

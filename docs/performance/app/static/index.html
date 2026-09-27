@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True DLD – ИИ-прогноз загрузки трамвайных маршрутов</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+    --surface: #ffffff;
+    --ink: #14171f;
+    --muted: #6b7280;
+    --line: #e7e9ee;
+    --brand: #0a66ff;
+    --brand-dark: #0a4fc4;
+    --brand-soft: #eef3ff;
+    --good: #1a9e6b;
+    --warn: #b8720f;
+    --warn-soft: #fdf1de;
+    --bad: #c8372a;
+    --radius: 14px;
+    --radius-sm: 9px;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg-soft);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+
+  .brand-mark {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 20px; height: 20px; }
+
+  .brand-name { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+  .brand-tagline { font-size: 0.74rem; color: var(--muted); margin-top: 1px; }
+
+  .topbar-trams {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 190px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .topbar-trams svg {
+    width: 190px;
+    height: 34px;
+    overflow: visible;
+  }
+
+  #header-status {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 0 0 rgba(26,158,107,0.5);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(26,158,107,0.45); }
+    70% { box-shadow: 0 0 0 6px rgba(26,158,107,0); }
+    100% { box-shadow: 0 0 0 0 rgba(26,158,107,0); }
+  }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(150deg, #0d3b8f 0%, #0a66ff 48%, #2f8fff 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 52px 32px 34px;
+    color: #ffffff;
+  }
+
+  .hero-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-title {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    line-height: 1.08;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    margin: 0;
+    color: #ffffff;
+    text-shadow: 0 2px 18px rgba(0, 35, 100, 0.16);
+  }
+
+  .hero-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.9fr);
+    gap: 34px;
+    align-items: center;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  .hero-stat {
+    background: rgba(255,255,255,0.13);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 15px;
+    padding: 15px 17px;
+    min-height: 74px;
+    box-shadow: 0 8px 28px rgba(0, 31, 91, 0.08);
+  }
+  .hero-stat .num { font-size: 1.5rem; font-weight: 750; letter-spacing: -0.025em; color: #ffffff; }
+  .hero-stat .label { font-size: 0.75rem; color: #dbe8ff; margin-top: 2px; }
+
+  .hero-description {
+    justify-self: end;
+    max-width: 470px;
+    padding: 4px 0 4px 20px;
+    text-align: right;
+    color: #dbe8ff;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    border-right: 2px solid rgba(255,255,255,0.34);
+    padding-right: 18px;
+  }
+
+  .hero-map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.13;
+    pointer-events: none;
+  }
+
+  .hero-map path, .hero-map circle {
+    vector-effect: non-scaling-stroke;
+  }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 32px 70px;
+  }
+
+  section.block { margin-bottom: 22px; }
+
+  .section-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .section-hint { font-size: 0.83rem; color: var(--muted); margin: 0 0 14px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: 0 1px 2px rgba(20,23,31,0.03);
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+  .field .field-note { font-size: 0.71rem; color: #9aa1ac; max-width: 220px; }
+
+  select, input[type=date] {
+    font: inherit;
+    font-size: 0.87rem;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    color: var(--ink);
+    min-width: 160px;
+  }
+  select:focus, input:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+  .segmented { display: flex; background: var(--bg-soft); border-radius: 100px; padding: 3px; border: 1px solid var(--line); }
+  .segmented button {
+    font: inherit; font-size: 0.82rem; font-weight: 600; padding: 7px 16px;
+    border: none; background: none; cursor: pointer; color: var(--muted);
+    border-radius: 100px; transition: background 0.15s, color 0.15s;
+  }
+  .segmented button.active { background: var(--brand); color: #fff; }
+
+  .export-buttons { margin-left: auto; display: flex; gap: 8px; }
+
+  .btn {
+    font: inherit; font-size: 0.83rem; font-weight: 600; padding: 9px 16px;
+    border-radius: var(--radius-sm); text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent;
+  }
+  .btn-outline { border-color: var(--line); color: var(--ink); background: var(--surface); }
+  .btn-outline:hover { border-color: var(--brand); color: var(--brand); }
+
+  .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: 0 1px 2px rgba(20,23,31,0.03);
+  }
+  .stat-card .label { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+  .stat-card .helptext { font-size: 0.71rem; color: #9aa1ac; margin-top: 2px; line-height: 1.4; }
+  .stat-card .value { font-size: 1.55rem; font-weight: 700; margin-top: 6px; letter-spacing: -0.02em; }
+  .stat-card .value.brand { color: var(--brand); }
+
+  .adjust-title-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .adjust-title { font-size: 0.95rem; font-weight: 700; }
+  .adjust-badge {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    background: var(--warn-soft); color: var(--warn); padding: 3px 8px; border-radius: 100px;
+  }
+  .adjust-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; max-width: 720px; }
+
+  .adjust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .adjust-item label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; }
+  .adjust-item .adjust-item-hint { font-size: 0.73rem; color: #9aa1ac; margin-top: 6px; line-height: 1.4; }
+  .adjust-item select { width: 100%; }
+
+  .applied-section { margin-bottom: 20px; }
+  .applied-title-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .applied-title { font-size: 0.95rem; font-weight: 700; }
+  .applied-badge {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    background: #e4f6ee; color: var(--good); padding: 3px 8px; border-radius: 100px;
+  }
+  .applied-list { display: flex; flex-direction: column; gap: 8px; }
+  .applied-item {
+    display: flex; gap: 10px; align-items: flex-start; font-size: 0.85rem;
+    background: #f7fbf9; border: 1px solid #dcefe6; border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .applied-item .dot { color: var(--good); font-size: 1rem; line-height: 1.3; }
+  .applied-item a { color: var(--brand); text-decoration: none; }
+  .applied-item a:hover { text-decoration: underline; }
+  .applied-empty { font-size: 0.85rem; color: var(--muted); }
+
+  .demo-section { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 4px; }
+
+  .chart-card canvas { max-height: 300px; }
+
+  details.table-card { padding: 4px 20px 18px; }
+  details.table-card summary {
+    padding: 15px 0; cursor: pointer; font-size: 0.86rem; color: var(--ink); font-weight: 700;
+    list-style: none; display: flex; align-items: center; gap: 8px;
+  }
+  details.table-card summary::-webkit-details-marker { display: none; }
+  details.table-card summary::before {
+    content: ""; width: 7px; height: 7px; border-right: 2px solid var(--brand);
+    border-bottom: 2px solid var(--brand); transform: rotate(-45deg); transition: transform 0.15s;
+  }
+  details.table-card[open] summary::before { transform: rotate(45deg); }
+
+  .table-scroll { max-height: 380px; overflow-y: auto; border-top: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); }
+  th {
+    position: sticky; top: 0; background: var(--surface); color: var(--muted);
+    font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  td.num { text-align: right; }
+
+  #map { height: 520px; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; }
+  .map-note {
+    font-size: 0.83rem; color: var(--brand-dark); padding: 12px 16px;
+    background: var(--brand-soft); border-radius: var(--radius-sm); margin-bottom: 14px;
+  }
+  .legend { display: flex; gap: 18px; font-size: 0.78rem; color: var(--muted); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .scope-card { background: var(--bg-soft); border: 1px dashed var(--line); }
+  .scope-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 4px; }
+  .scope-item h4 { font-size: 0.85rem; margin: 0 0 6px; font-weight: 700; }
+  .scope-item p { font-size: 0.82rem; color: var(--muted); margin: 0; line-height: 1.5; }
+
+  footer { text-align: center; padding: 24px; font-size: 0.76rem; color: #9aa1ac; }
+
+  @media (max-width: 720px) {
+    .topbar, .hero-inner, main { padding-left: 16px; padding-right: 16px; }
+    .topbar-trams { width: 150px; }
+    .topbar-trams svg { width: 150px; }
+    .hero { padding-top: 38px; }
+    .hero-title { margin-bottom: 22px; }
+    .hero-content { grid-template-columns: 1fr; gap: 20px; }
+    .hero-description { justify-self: stretch; max-width: none; text-align: left; border-right: none; border-left: 2px solid rgba(255,255,255,0.34); padding: 0 0 0 14px; }
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .export-buttons { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 16h16M4 16a2 2 0 01-2-2V8a2 2 0 012-2h16a2 2 0 012 2v6a2 2 0 01-2 2M4 16v3a1 1 0 001 1h2a1 1 0 001-1v-2m8 2v-2m4 2v-2a1 1 0 011-1h1M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">True DLD</div>
+      <div class="brand-tagline">Хакатон Московского транспорта</div>
+    </div>
+  </div>
+  <div class="topbar-trams" aria-hidden="true">
+    <svg viewBox="0 0 190 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 27.5H182" stroke="#D7DEE8" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M43 17H56M92 17H105M141 17H154" stroke="#B8C2CF" stroke-width="1.2" stroke-linecap="round"/>
+      <g stroke="#596575" stroke-width="1.15" stroke-linejoin="round">
+        <path d="M8 9.5C8 7.84 9.34 6.5 11 6.5H34C35.66 6.5 37 7.84 37 9.5V22H8V9.5Z" fill="white"/>
+        <path d="M53 9.5C53 7.84 54.34 6.5 56 6.5H79C80.66 6.5 82 7.84 82 9.5V22H53V9.5Z" fill="white"/>
+        <path d="M98 9.5C98 7.84 99.34 6.5 101 6.5H124C125.66 6.5 127 7.84 127 9.5V22H98V9.5Z" fill="white"/>
+        <path d="M143 9.5C143 7.84 144.34 6.5 146 6.5H169C170.66 6.5 172 7.84 172 9.5V22H143V9.5Z" fill="white"/>
+        <path d="M13 11H32V17H13V11ZM58 11H77V17H58V11ZM103 11H122V17H103V11ZM148 11H167V17H148V11Z" fill="#EEF2F6"/>
+        <circle cx="14" cy="23" r="2" fill="white"/><circle cx="31" cy="23" r="2" fill="white"/>
+        <circle cx="59" cy="23" r="2" fill="white"/><circle cx="76" cy="23" r="2" fill="white"/>
+        <circle cx="104" cy="23" r="2" fill="white"/><circle cx="121" cy="23" r="2" fill="white"/>
+        <circle cx="149" cy="23" r="2" fill="white"/><circle cx="166" cy="23" r="2" fill="white"/>
+      </g>
+      <path d="M20 6.5V3.5H28V6.5M65 6.5V3.5H73V6.5M110 6.5V3.5H118V6.5M155 6.5V3.5H163V6.5" stroke="#596575" stroke-width="1.1" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div id="header-status"><span class="pulse"></span> Загрузка данных…</div>
+</div>
+
+<div class="hero">
+  <svg class="hero-map" viewBox="0 0 1200 430" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="none" stroke="#ffffff" stroke-width="1.5">
+      <path d="M-30 330 C120 250 170 355 285 285 S475 175 590 255 S770 360 890 250 S1080 115 1230 175"/>
+      <path d="M-20 120 C120 195 205 120 310 165 S480 315 620 175 S820 70 960 155 S1090 285 1230 250"/>
+      <path d="M140 450 C185 345 270 300 365 300 S525 365 610 300 S790 190 875 245 S1035 370 1090 430"/>
+      <path d="M420 -20 C390 90 460 125 520 185 S610 315 575 450"/>
+      <path d="M760 -20 C720 90 735 160 810 220 S925 330 900 450"/>
+      <path d="M1010 0 C950 80 965 150 1030 215 S1100 330 1080 450"/>
+    </g>
+    <g fill="#ffffff">
+      <circle cx="590" cy="255" r="5"/><circle cx="310" cy="165" r="4"/><circle cx="810" cy="220" r="4"/>
+      <circle cx="900" cy="245" r="4"/><circle cx="520" cy="185" r="3.5"/><circle cx="1030" cy="215" r="3.5"/>
+    </g>
+  </svg>
+
+  <div class="hero-inner">
+    <div class="hero-title">
+      <h1>ИИ-прогноз загрузки трамвайных маршрутов</h1>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="num">10</div><div class="label">маршрутов в прогнозе</div></div>
+        <div class="hero-stat"><div class="num">5</div><div class="label">маршрутов с картой остановок</div></div>
+        <div class="hero-stat"><div class="num">3</div><div class="label">горизонта прогноза</div></div>
+        <div class="hero-stat"><div class="num" id="hero-total-routes">–</div><div class="label">часовых прогнозов в базе</div></div>
+      </div>
+
+      <div class="hero-description">
+        Сервис прогнозирует число посадок на трамвайных маршрутах Москвы на трёх
+        горизонтах: по часам на выбранный день, по дням на месяц и на весь период,
+        доступный в прогнозе, с 1 ноября по 31 декабря 2025 года. Есть карта
+        остановок, список уже учтённых моделью событий и возможность проверить
+        гипотетический сценарий «а что если».
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <section class="block card">
+    <div class="controls">
+      <div class="field">
+        <label for="route-select">Маршрут</label>
+        <select id="route-select"></select>
+      </div>
+
+      <div class="field">
+        <label for="stop-select">Остановка</label>
+        <select id="stop-select"><option value="">Весь маршрут</option></select>
+      </div>
+
+      <div class="field">
+        <label>Горизонт прогноза</label>
+        <div class="segmented" id="horizon-toggle">
+          <button data-horizon="day" class="active">День</button>
+          <button data-horizon="month">Месяц</button>
+          <button data-horizon="year">Весь период</button>
+        </div>
+      </div>
+
+      <div class="field" id="date-field">
+        <label for="date-input">Дата</label>
+        <input type="date" id="date-input" min="2025-11-01" max="2025-12-31" value="2025-11-01">
+      </div>
+
+      <div class="export-buttons">
+        <a id="export-csv" class="btn btn-outline" href="#" target="_blank">Скачать CSV</a>
+        <a id="export-xlsx" class="btn btn-outline" href="#" target="_blank">Скачать XLSX</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block summary-row">
+    <div class="stat-card">
+      <div class="label">За какой период показан прогноз</div>
+      <div class="value" id="stat-period" style="font-size:1.05rem">–</div>
+      <div class="helptext">График, таблица и суммы ниже относятся именно к этой дате (или диапазону дат)</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Суммарный прогноз посадок</div>
+      <div class="value mono" id="stat-total-base">–</div>
+      <div class="helptext">Сумма прогнозных посадок (оплат проезда) по маршруту за весь выбранный период и все часы – без поправок ниже</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">С учётом сценария «а что если»</div>
+      <div class="value mono brand" id="stat-total-adjusted">–</div>
+      <div class="helptext">Пересчёт с учётом гипотетического события или ограничения из блока ниже — это не факт, а прикидка</div>
+    </div>
+  </section>
+
+  <section class="block card">
+    <div class="applied-section">
+      <div class="applied-title-row">
+        <div class="applied-title">Что уже учтено в этом прогнозе</div>
+        <div class="applied-badge">Факт модели</div>
+      </div>
+      <div class="adjust-hint" style="margin-bottom:12px;">
+        Для выбранных даты и маршрута ниже перечислено, что модель уже приняла во внимание.
+        Менять это нельзя — эти правки уже «зашиты» в цифры на графике.
+      </div>
+      <div class="applied-list" id="applied-list">
+        <div class="applied-empty">Выберите маршрут и дату</div>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <div class="adjust-title-row">
+        <div class="adjust-title">Проверить сценарий «а что если»</div>
+        <div class="adjust-badge">Не факт, а предположение</div>
+      </div>
+      <div class="adjust-hint">
+        Здесь можно вручную задать событие, которого нет в исходных данных, и посмотреть,
+        как оно могло бы изменить прогноз. Это не пересчёт модели, а условная прикидка —
+        цифры ниже помечены отдельно и не смешиваются с блоком выше.
+      </div>
+      <div class="adjust-grid">
+        <div class="adjust-item">
+          <label for="event-select">Мероприятие рядом с маршрутом</label>
+          <select id="event-select">
+            <option value="0">Нет мероприятия</option>
+            <option value="10">Небольшое мероприятие поблизости</option>
+            <option value="35">Крупное мероприятие (матч, концерт, фестиваль)</option>
+          </select>
+          <div class="adjust-item-hint">Крупные мероприятия резко увеличивают поток в конкретные часы.</div>
+        </div>
+
+        <div class="adjust-item">
+          <label for="season-select">Внеплановое ограничение движения</label>
+          <select id="season-select">
+            <option value="0">Ограничений нет</option>
+            <option value="-15">Ремонт или объезд на маршруте</option>
+          </select>
+          <div class="adjust-item-hint">Ремонт и объезды временно снижают число поездок на маршруте.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block card chart-card">
+    <div class="section-title">Динамика прогноза</div>
+    <div class="section-hint" id="chart-hint">Прогноз посадок по часам выбранного дня</div>
+    <canvas id="forecast-chart"></canvas>
+  </section>
+
+  <section class="block card" style="padding:0;">
+    <details class="table-card" open>
+      <summary id="table-summary">Данные по часам</summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Маршрут</th><th>Дата</th><th>Час</th><th style="text-align:right">Прогноз посадок</th></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="block card">
+    <div class="section-title">Карта маршрута</div>
+    <div class="section-hint">Остановки маршрута с прогнозом на выбранный час. Цвет точки – загрузка относительно других часов этого же маршрута, не абсолютное число пассажиров.</div>
+
+    <div class="controls">
+      <div class="field">
+        <label for="map-route-select">Маршрут</label>
+        <select id="map-route-select"></select>
+      </div>
+      <div class="field">
+        <label for="map-date-input">Дата</label>
+        <input type="date" id="map-date-input" min="2025-11-01" max="2025-12-31" value="2025-11-01">
+      </div>
+      <div class="field">
+        <label for="map-hour-input">Час</label>
+        <select id="map-hour-input"></select>
+      </div>
+    </div>
+
+    <div id="map-content">
+      <div class="map-note">
+        География есть только для маршрутов 1, 5, 7, 11, 12 – по остальным
+        прогноз доступен только в таблице и на графике выше.
+      </div>
+      <div id="map"></div>
+      <div class="legend" style="margin-top:12px;">
+        <span><span class="dot" style="background:#1a9e6b"></span> низкая загрузка</span>
+        <span><span class="dot" style="background:#b8720f"></span> средняя загрузка</span>
+        <span><span class="dot" style="background:#c8372a"></span> высокая загрузка</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block card scope-card">
+    <div class="section-title">Область применимости модели</div>
+    <div class="section-hint">Для диспетчера и жюри – что именно покрывает текущий прогноз, а что нет.</div>
+    <div class="scope-grid">
+      <div class="scope-item">
+        <h4>Маршруты</h4>
+        <p>Прогноз строится для 10 трамвайных маршрутов: 1, 5, 7, 11, 12, 17, 25, 26, 28, 50. Маршрут 5 сохранён в данных, но помечен организаторами как нерегулярный.</p>
+      </div>
+      <div class="scope-item">
+        <h4>Период прогноза</h4>
+        <p>Обучение – на данных с января по октябрь 2025 года. Прогноз строится на ноябрь–декабрь 2025 как продолжение временного ряда. За пределами этого диапазона модель не проверялась.</p>
+      </div>
+      <div class="scope-item">
+        <h4>Карта остановок</h4>
+        <p>Координаты остановок доступны только для маршрутов 1, 5, 7, 11, 12 – они присутствуют в исходном справочнике организаторов. Для остальных пяти маршрутов география в датасете отсутствует.</p>
+      </div>
+      <div class="scope-item">
+        <h4>Единица прогноза</h4>
+        <p>Прогнозируется число успешных валидаций (оплат проезда) за час на маршруте – это событие оплаты, а не число уникальных пассажиров и не число людей одновременно в вагоне.</p>
+      </div>
+      <div class="scope-item">
+        <h4>Внешние источники</h4>
+        <p>
+          Календарные и событийные поправки в прогнозе опираются на
+          <a href="https://government.ru/docs/all/155500/" target="_blank" rel="noopener">производственный календарь РФ на 2025 год</a>,
+          новости о запуске
+          <a href="https://mosmetro.ru/news/details/8259" target="_blank" rel="noopener">линии Т1 (12 ноября)</a>
+          и
+          <a href="https://mosmetro.ru/news/details/8515" target="_blank" rel="noopener">маршрута 5 (16 декабря)</a>,
+          а также сообщения Департамента транспорта Москвы об
+          <a href="https://transport.mos.ru/mostrans/all_news/127065" target="_blank" rel="noopener">ограничениях</a>
+          и
+          <a href="https://msknovosti.ru/news/transport/dvizhenie-tramvaev-vosstanovleno-po-vyhodnym-v-nagatino-i-do-belorusskogo-vokzala/" target="_blank" rel="noopener">восстановлении</a>
+          движения маршрутов 7 и 50. Полный список — в
+          <a href="/docs/external_sources.md" target="_blank" rel="noopener">docs/external_sources.md</a>.
+        </p>
+      </div>
+      <div class="scope-item">
+        <h4>Что не вошло в модель</h4>
+        <p>Погода тестировалась отдельно, но не дала прироста качества прогноза и в финальную модель не вошла. Дорожный трафик, школьные каникулы как отдельный фактор и фактический пассажиропоток прогнозного периода тоже не использовались.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>True DLD · Хакатон Московского транспорта · ИИ-прогноз загрузки трамвайных маршрутов</footer>
+
+<script>
+const API_BASE = "";
+
+let allRoutes = [];
+let routesWithMap = [];
+let chart = null;
+let leafletMap = null;
+let mapLayers = [];
+let currentHorizon = 'day';
+let currentRawItems = [];
+
+async function fetchJSON(url) {
+  const res = await fetch(API_BASE + url);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || ('Ошибка запроса: ' + res.status));
+  }
+  return res.json();
+}
+
+function setStatus(text) {
+  document.getElementById('header-status').innerHTML = '<span class="pulse"></span> ' + text;
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
+
+async function init() {
+  try {
+    allRoutes = await fetchJSON('/forecast/routes');
+    routesWithMap = await fetchJSON('/geo/routes-with-map');
+
+    fillRouteSelect('route-select');
+    fillRouteSelect('map-route-select');
+    fillHourSelect();
+
+    setStatus(allRoutes.length + ' маршрутов на связи');
+    document.getElementById('hero-total-routes').textContent = fmt(allRoutes.length * 61 * 24);
+
+    setupHorizonToggle();
+    setupAdjustSelects();
+    setupMap();
+
+    document.getElementById('route-select').addEventListener('change', onRouteChange);
+    document.getElementById('stop-select').addEventListener('change', () => renderAll());
+    document.getElementById('date-input').addEventListener('change', loadTableAndChart);
+
+    document.getElementById('map-route-select').addEventListener('change', loadMapForRoute);
+    document.getElementById('map-date-input').addEventListener('change', loadMapForRoute);
+    document.getElementById('map-hour-input').addEventListener('change', loadMapForRoute);
+
+    await onRouteChange();
+    await loadMapForRoute();
+
+  } catch (err) {
+    setStatus('Не удалось загрузить данные с сервера');
+    console.error(err);
+  }
+}
+
+function fillRouteSelect(selectId) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = '';
+  allRoutes.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.route;
+    opt.textContent = 'Маршрут ' + r.route + (r.has_map ? ' · есть карта' : '');
+    select.appendChild(opt);
+  });
+}
+
+function fillHourSelect() {
+  const select = document.getElementById('map-hour-input');
+  select.innerHTML = '';
+  for (let h = 0; h < 24; h++) {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = String(h).padStart(2, '0') + ':00';
+    select.appendChild(opt);
+  }
+  select.value = 8;
+}
+
+function setupHorizonToggle() {
+  document.querySelectorAll('#horizon-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#horizon-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentHorizon = btn.dataset.horizon;
+      document.getElementById('date-field').style.display = currentHorizon === 'year' ? 'none' : 'flex';
+      const hints = {
+        day: 'Прогноз посадок по часам выбранного дня',
+        month: 'Прогноз посадок по дням выбранного месяца (сумма всех часов за день)',
+        year: 'Прогноз посадок по дням за весь доступный период (ноябрь–декабрь 2025 – данных на полный год в датасете нет)',
+      };
+      document.getElementById('chart-hint').textContent = hints[currentHorizon];
+      loadTableAndChart();
+    });
+  });
+}
+
+function setupAdjustSelects() {
+  ['event', 'season'].forEach(name => {
+    document.getElementById(name + '-select').addEventListener('change', renderAll);
+  });
+}
+
+function getAdjustFactor() {
+  const e = parseInt(document.getElementById('event-select').value);
+  const s = parseInt(document.getElementById('season-select').value);
+  return 1 + (e + s) / 100;
+}
+
+function getDateRange() {
+  const dateStr = document.getElementById('date-input').value || '2025-11-01';
+  if (currentHorizon === 'day') return { from: dateStr, to: dateStr };
+  if (currentHorizon === 'month') {
+    const d = new Date(dateStr + 'T00:00:00');
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return { from: toISODate(first), to: toISODate(last) };
+  }
+  return { from: '2025-11-01', to: '2025-12-31' };
+}
+
+function toISODate(d) { return d.toISOString().slice(0, 10); }
+
+const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+// Превращает "2025-11-01" в "1 ноября 2025 г." – так период читается
+// человеком с первого взгляда, а не как техническая ISO-дата.
+function formatDateRu(isoStr) {
+  const [y, m, d] = isoStr.split('-').map(Number);
+  return `${d} ${MONTHS_RU[m - 1]} ${y} г.`;
+}
+
+function formatPeriodRu(from, to) {
+  if (from === to) return formatDateRu(from);
+  return `${formatDateRu(from)} – ${formatDateRu(to)}`;
+}
+
+async function onRouteChange() {
+  const route = parseInt(document.getElementById('route-select').value);
+  const stopSelect = document.getElementById('stop-select');
+  stopSelect.innerHTML = '<option value="">Весь маршрут</option>';
+
+  if (routesWithMap.includes(route)) {
+    const geometry = await fetchJSON(`/geo/route/${route}`);
+    const seen = new Set();
+    geometry.directions.forEach(dir => {
+      dir.stops.forEach(s => {
+        if (!seen.has(s.stop_name)) {
+          seen.add(s.stop_name);
+          const opt = document.createElement('option');
+          opt.value = s.stop_name;
+          opt.textContent = s.stop_name;
+          stopSelect.appendChild(opt);
+        }
+      });
+    });
+  }
+
+  await loadTableAndChart();
+}
+
+async function loadTableAndChart() {
+  const route = document.getElementById('route-select').value;
+  const { from, to } = getDateRange();
+  const url = `/forecast?route=${route}&date_from=${from}&date_to=${to}`;
+  const data = await fetchJSON(url);
+  currentRawItems = data.items;
+  updateExportLinks(route, from, to);
+  renderAll();
+  loadAppliedEvents(route, from, to);
+}
+
+async function loadAppliedEvents(route, from, to) {
+  const list = document.getElementById('applied-list');
+  try {
+    const data = await fetchJSON(`/events/applied?route=${route}&date_from=${from}&date_to=${to}`);
+    if (!data.items.length) {
+      list.innerHTML = '<div class="applied-empty">Для этого маршрута и периода особых поправок не было — прогноз построен по обычному сезонному профилю.</div>';
+      return;
+    }
+    list.innerHTML = data.items.map(item => `
+      <div class="applied-item">
+        <span class="dot">●</span>
+        <span>${item.text}${item.url ? ` <a href="${item.url}" target="_blank" rel="noopener">Источник</a>` : ''}</span>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = '<div class="applied-empty">Не удалось загрузить список поправок.</div>';
+    console.error(err);
+  }
+}
+
+function updateExportLinks(route, from, to) {
+  const params = `route=${route}&date_from=${from}&date_to=${to}`;
+  document.getElementById('export-csv').href = API_BASE + '/export/csv?' + params;
+  document.getElementById('export-xlsx').href = API_BASE + '/export/xlsx?' + params;
+}
+
+function renderAll() {
+  if (!currentRawItems.length) return;
+
+  const factor = getAdjustFactor();
+  const stopName = document.getElementById('stop-select').value;
+  const { from, to } = getDateRange();
+
+  const baseTotal = currentRawItems.reduce((s, i) => s + i.prediction, 0);
+  const adjustedItems = currentRawItems.map(i => ({ ...i, prediction: i.prediction * factor }));
+  const adjustedTotal = baseTotal * factor;
+
+  document.getElementById('stat-period').textContent = formatPeriodRu(from, to);
+  document.getElementById('stat-total-base').textContent = fmt(baseTotal);
+  document.getElementById('stat-total-adjusted').textContent = fmt(adjustedTotal);
+
+  updateChart(adjustedItems, currentHorizon);
+  updateTable(adjustedItems);
+
+  const summaryText = stopName
+    ? `Данные по часам · это прогноз всего маршрута ${document.getElementById('route-select').value} – цифры одинаковы для любой остановки, включая «${stopName}»`
+    : 'Данные по часам';
+  document.getElementById('table-summary').textContent = summaryText;
+}
+
+function updateChart(items, horizon) {
+  const ctx = document.getElementById('forecast-chart');
+  let labels, values;
+
+  if (horizon === 'day') {
+    const byHour = {};
+    items.forEach(i => { byHour[i.hour] = i.prediction; });
+    labels = Array.from({length: 24}, (_, h) => String(h).padStart(2, '0') + ':00');
+    values = Array.from({length: 24}, (_, h) => byHour[h] ?? 0);
+  } else {
+    const byDate = {};
+    items.forEach(i => { byDate[i.date] = (byDate[i.date] || 0) + i.prediction; });
+    labels = Object.keys(byDate).sort();
+    values = labels.map(d => byDate[d]);
+  }
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Прогноз посадок',
+        data: values,
+        borderColor: '#0a66ff',
+        backgroundColor: 'rgba(10,102,255,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: horizon === 'day' ? 3 : 1.5,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#e7e9ee' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function updateTable(items) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.route}</td>
+      <td class="mono">${item.date}</td>
+      <td class="mono">${String(item.hour).padStart(2, '0')}:00</td>
+      <td class="num mono">${fmt(item.prediction)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function setupMap() {
+  leafletMap = L.map('map').setView([55.7558, 37.6173], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; участники OpenStreetMap',
+    maxZoom: 19,
+  }).addTo(leafletMap);
+}
+
+function colorForLoad(value, max) {
+  const ratio = max > 0 ? value / max : 0;
+  if (ratio < 0.33) return '#1a9e6b';
+  if (ratio < 0.66) return '#b8720f';
+  return '#c8372a';
+}
+
+async function loadMapForRoute() {
+  const route = parseInt(document.getElementById('map-route-select').value);
+  const date = document.getElementById('map-date-input').value;
+  const hour = document.getElementById('map-hour-input').value;
+  const contentEl = document.getElementById('map-content');
+
+  mapLayers.forEach(l => leafletMap.removeLayer(l));
+  mapLayers = [];
+
+  if (!routesWithMap.includes(route)) {
+    contentEl.querySelector('.map-note').textContent =
+      `Для маршрута ${route} нет географических данных в исходном датасете. ` +
+      `Карта доступна для маршрутов: ${routesWithMap.join(', ')}.`;
+    return;
+  }
+  contentEl.querySelector('.map-note').textContent =
+    'География есть только для маршрутов 1, 5, 7, 11, 12 – по остальным ' +
+    'прогноз доступен только в таблице и на графике выше.';
+
+  const [geometry, forecastForHour] = await Promise.all([
+    fetchJSON(`/geo/route/${route}`),
+    fetchJSON(`/forecast?route=${route}&date_from=${date}&date_to=${date}&hour=${hour}`),
+  ]);
+
+  const predictionValue = forecastForHour.items[0] ? forecastForHour.items[0].prediction : 0;
+  const allBounds = [];
+
+  geometry.directions.forEach((direction, idx) => {
+    const coords = direction.stops.map(s => [s.lat, s.lon]);
+    coords.forEach(c => allBounds.push(c));
+
+    const line = L.polyline(coords, {
+      color: idx === 0 ? '#0a66ff' : '#14171f',
+      weight: 4,
+      opacity: 0.75,
+    }).addTo(leafletMap);
+    mapLayers.push(line);
+
+    direction.stops.forEach(stop => {
+      const marker = L.circleMarker([stop.lat, stop.lon], {
+        radius: 6,
+        fillColor: colorForLoad(predictionValue, 60),
+        fillOpacity: 0.9,
+        color: '#ffffff',
+        weight: 1.5,
+      }).addTo(leafletMap);
+
+      marker.bindPopup(
+        `<strong>${stop.stop_name}</strong><br>` +
+        `Маршрут ${route}, ${date} ${String(hour).padStart(2,'0')}:00<br>` +
+        `Прогноз: ${fmt(predictionValue)} посадок`
+      );
+      mapLayers.push(marker);
+    });
+  });
+
+  if (allBounds.length > 0) {
+    leafletMap.fitBounds(allBounds, { padding: [30, 30] });
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>

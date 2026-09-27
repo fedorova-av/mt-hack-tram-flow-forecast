@@ -1,0 +1,39 @@
+{
+  "scenario": "csv_export",
+  "base_url": "http://127.0.0.1:8765",
+  "paths": [
+    "/export/csv?route=7&date_from=2025-11-01&date_to=2025-11-30"
+  ],
+  "requests": 500,
+  "concurrency": 20,
+  "wall_seconds": 1.3529,
+  "throughput_rps": 369.57,
+  "latency_ms": {
+    "min": 31.996,
+    "mean": 53.561,
+    "p50": 53.417,
+    "p95": 63.245,
+    "p99": 69.254,
+    "max": 71.599
+  },
+  "responses": {
+    "success": 500,
+    "failed": 0,
+    "status_counts": {
+      "200": 500
+    },
+    "error_counts": {},
+    "total_bytes": 7810000,
+    "mean_bytes": 15620.0
+  },
+  "resources": {
+    "server_rss_peak_mb": 165.02,
+    "server_cpu_mean_percent": 111.5,
+    "server_cpu_peak_percent": 114.4
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "logical_cpu_count": 8
+  }
+}

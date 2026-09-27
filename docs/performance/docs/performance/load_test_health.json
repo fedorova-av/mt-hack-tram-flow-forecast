@@ -1,0 +1,39 @@
+{
+  "scenario": "health",
+  "base_url": "http://127.0.0.1:8765",
+  "paths": [
+    "/health"
+  ],
+  "requests": 5000,
+  "concurrency": 100,
+  "wall_seconds": 1.6656,
+  "throughput_rps": 3001.86,
+  "latency_ms": {
+    "min": 2.372,
+    "mean": 32.756,
+    "p50": 30.251,
+    "p95": 49.227,
+    "p99": 68.401,
+    "max": 74.942
+  },
+  "responses": {
+    "success": 5000,
+    "failed": 0,
+    "status_counts": {
+      "200": 5000
+    },
+    "error_counts": {},
+    "total_bytes": 100000,
+    "mean_bytes": 20.0
+  },
+  "resources": {
+    "server_rss_peak_mb": 118.52,
+    "server_cpu_mean_percent": 104.16,
+    "server_cpu_peak_percent": 112.1
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "logical_cpu_count": 8
+  }
+}

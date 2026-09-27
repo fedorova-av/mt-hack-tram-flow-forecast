@@ -1,0 +1,42 @@
+{
+  "scenario": "typical",
+  "base_url": "http://127.0.0.1:8765",
+  "paths": [
+    "/forecast/routes",
+    "/forecast?route=7&date_from=2025-11-01&date_to=2025-11-01",
+    "/events/applied?route=7&date_from=2025-11-12&date_to=2025-11-20",
+    "/geo/route/7"
+  ],
+  "requests": 4000,
+  "concurrency": 50,
+  "wall_seconds": 6.1873,
+  "throughput_rps": 646.49,
+  "latency_ms": {
+    "min": 9.708,
+    "mean": 76.989,
+    "p50": 78.631,
+    "p95": 97.28,
+    "p99": 109.251,
+    "max": 122.121
+  },
+  "responses": {
+    "success": 4000,
+    "failed": 0,
+    "status_counts": {
+      "200": 4000
+    },
+    "error_counts": {},
+    "total_bytes": 14418000,
+    "mean_bytes": 3604.5
+  },
+  "resources": {
+    "server_rss_peak_mb": 133.98,
+    "server_cpu_mean_percent": 113.62,
+    "server_cpu_peak_percent": 116.5
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "logical_cpu_count": 8
+  }
+}
