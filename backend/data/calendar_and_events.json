@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0",
+  "model_version": "v3-main-t1-0.90",
+  "timezone": "Europe/Moscow",
+  "forecast_horizon": {
+    "start": "2025-11-01",
+    "end": "2025-12-31"
+  },
+  "forecast_file": "submission.csv",
+  "sources": [
+    {
+      "id": "provided_gtfs_route_5",
+      "name": "Hackathon dataset.zip and supplied GTFS reference",
+      "url": "https://disk.yandex.ru/d/DiFwlfMOauxjBg"
+    },
+    {
+      "id": "government_calendar_2025",
+      "name": "Government of Russia: 2025 workday and holiday transfers",
+      "url": "https://government.ru/docs/all/155500/"
+    },
+    {
+      "id": "t1_launch_2025_11_12",
+      "name": "Moscow Metro: T1 launch on 12 November 2025",
+      "url": "https://mosmetro.ru/news/details/8259"
+    },
+    {
+      "id": "routes_7_50_night_restriction",
+      "name": "Moscow Department of Transport: late-service restrictions for routes 7 and 50",
+      "url": "https://transport.mos.ru/mostrans/all_news/127065"
+    },
+    {
+      "id": "routes_7_50_weekend_restore",
+      "name": "Weekend route restoration for routes 7 and 50",
+      "url": "https://msknovosti.ru/news/transport/dvizhenie-tramvaev-vosstanovleno-po-vyhodnym-v-nagatino-i-do-belorusskogo-vokzala/"
+    },
+    {
+      "id": "routes_7_50_late_weekend_restriction",
+      "name": "Moscow Department of Transport: weekend late-service restrictions from 13 December",
+      "url": "https://transport.mos.ru/mostrans/all_news/127620"
+    },
+    {
+      "id": "route_5_launch_confirmation",
+      "name": "Moscow Metro: route 5 launch confirmation",
+      "url": "https://mosmetro.ru/news/details/8515",
+      "status": "confirmation_only"
+    }
+  ],
+  "calendar_rules": [
+    {
+      "id": "official_holidays_2025",
+      "type": "calendar",
+      "dates": [
+        "2025-01-01",
+        "2025-01-02",
+        "2025-01-03",
+        "2025-01-04",
+        "2025-01-05",
+        "2025-01-06",
+        "2025-01-07",
+        "2025-01-08",
+        "2025-02-23",
+        "2025-03-08",
+        "2025-05-01",
+        "2025-05-02",
+        "2025-05-08",
+        "2025-05-09",
+        "2025-06-12",
+        "2025-06-13",
+        "2025-11-03",
+        "2025-11-04",
+        "2025-12-31"
+      ],
+      "model_effect": "holiday=true; lookup uses the Sunday hourly profile",
+      "implemented_in": "ml_runtime/src/features.py",
+      "source_id": "government_calendar_2025"
+    },
+    {
+      "id": "season_regimes",
+      "type": "model_rule",
+      "rules": [
+        "June-August: summer",
+        "January 1-8: winter_break",
+        "all other dates: regular"
+      ],
+      "model_effect": "selects the historical regime pool",
+      "implemented_in": "ml_runtime/src/features.py",
+      "source_id": null
+    },
+    {
+      "id": "working_saturday_2025_11_01",
+      "type": "calendar_override",
+      "date_start": "2025-11-01",
+      "date_end": "2025-11-01",
+      "routes": "all",
+      "model_effect": "85% Friday profile + 15% ordinary Saturday profile",
+      "implemented_in": "ml_runtime/src/interventions.py",
+      "source_id": "government_calendar_2025"
+    }
+  ],
+  "transport_events": [
+    {
+      "id": "route_5_launch",
+      "date_start": "2025-12-16",
+      "date_end": null,
+      "routes": [5, 25],
+      "model_effect": "route 5 is zero before launch; after launch it uses 75% of the route 25 anchor with launch ramp factors 0.75 and 0.90",
+      "implemented_in": "ml_runtime/src/interventions.py",
+      "source_id": "provided_gtfs_route_5",
+      "evidence_type": "provided_dataset_plus_model_assumption"
+    },
+    {
+      "id": "t1_launch_and_route_7_transfer",
+      "date_start": "2025-11-12",
+      "date_full_effect": "2025-11-19",
+      "date_end": null,
+      "routes": [7],
+      "model_effect": "first-week factor 0.95; steady factor 0.90 for the selected main v3 scenario",
+      "implemented_in": "ml_runtime/src/interventions.py and predict.py --t1-factor 0.90",
+      "source_id": "t1_launch_2025_11_12",
+      "evidence_type": "external_event_plus_scenario_parameter"
+    },
+    {
+      "id": "early_evening_restriction_routes_7_50",
+      "date_start": "2025-11-01",
+      "date_end": "2025-11-14",
+      "routes": [7, 50],
+      "hours": [22, 23],
+      "model_effect": "prediction multiplied by 0.90",
+      "implemented_in": "ml_runtime/src/interventions.py",
+      "source_id": "routes_7_50_night_restriction",
+      "evidence_type": "external_notice_converted_to_conservative_model_rule",
+      "note": "The v3 rule is broader than the minute-level wording of the public notice and should be described as a modelling assumption."
+    },
+    {
+      "id": "weekend_route_restore_7_50",
+      "date_start": "2025-11-15",
+      "date_end": null,
+      "routes": [7, 50],
+      "days_of_week": [5, 6],
+      "model_effect": "restores pre-closure weekend profiles; route 7 also receives the active T1 factor; route 50 is multiplied by 0.90",
+      "implemented_in": "ml_runtime/src/interventions.py",
+      "source_id": "routes_7_50_weekend_restore",
+      "evidence_type": "external_event_plus_model_assumption"
+    },
+    {
+      "id": "late_weekend_restriction_routes_7_50",
+      "date_start": "2025-12-13",
+      "date_end": "2025-12-31",
+      "routes": [7, 50],
+      "days_of_week": [5, 6],
+      "hours": [23],
+      "model_effect": "route 7 multiplied by 0.80; route 50 multiplied by 0.85",
+      "implemented_in": "ml_runtime/src/interventions.py",
+      "source_id": "routes_7_50_late_weekend_restriction",
+      "evidence_type": "external_event_plus_model_assumption"
+    }
+  ],
+  "usage_note": "All listed effects are already materialized in the forecast CSV. Do not apply them twice."
+}
