@@ -33,8 +33,7 @@ from app.events_loader import EventsRegistry
 from app.routers import forecast, geo, export, events
 
 # Пути к файлам данных. FORECAST_CSV_PATH указывает на финальный прогноз
-# v3 от ML-инженеров (T1-factor 0.90) — файл побайтно совпадает с их
-# submission.csv, поэтому его содержимое трогать не нужно.
+# v3 от ML-инженеров (T1-factor 0.90)
 FORECAST_CSV_PATH = "data/test_submission.csv"
 GEO_CSV_PATH = "data/route_stops_map.csv"
 EVENTS_JSON_PATH = "data/calendar_and_events.json"
