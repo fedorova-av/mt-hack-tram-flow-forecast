@@ -10,7 +10,7 @@
 [![ML](https://img.shields.io/badge/ML-score_0.89577-6A5ACD)](ml/README_ML.md)
 [![Load test](https://img.shields.io/badge/load_test-646_RPS-1A9E6B)](docs/performance/docs/performance_and_features.md)
 
-[Задача](https://mt-hackathon.ru/) · [ML и воспроизведение](ml/README_ML.md) · [Model Card](ml/MODEL_CARD.md) · [Внешние источники](docs/external_sources_for_final_solution/external_sources.md) · [Нагрузочный тест](docs/performance/docs/performance_and_features.md)
+[Задача](https://mt-hackathon.ru/) · [ML и воспроизведение](ml/README_ML.md) · [Model Card](ml/MODEL_CARD.md) · [Внешние источники](docs/external_sources_for_final_solution/README.md) · [Нагрузочный тест](docs/performance/docs/performance_and_features.md)
 
 </div>
 
@@ -106,7 +106,7 @@ flowchart TD
 - поздние ограничения маршрутов 7 и 50;
 - cold start маршрута 5 с 16 декабря по supplied GTFS.
 
-Все источники и модельные допущения разделены по статусам `used`, `confirmation_only`, `tested_not_selected`: [полный реестр](docs/external_sources_for_final_solution/external_sources.md).
+Все источники и модельные допущения разделены по статусам `used`, `confirmation_only`, `tested_not_selected`: [полный реестр](docs/external_sources_for_final_solution/README.md).
 
 ### Временная валидация
 
@@ -311,7 +311,7 @@ curl "http://localhost:8000/forecast?route=7&date_from=2025-11-01&date_to=2025-1
 - [ML: запуск обучения и инференса](ml/README_ML.md)
 - [Model Card](ml/MODEL_CARD.md)
 - [Эксперименты и выбор v3](ml/reports/scoremax_report.md)
-- [Внешние данные и источники](docs/external_sources_for_final_solution/external_sources.md)
+- [Внешние данные и источники](docs/external_sources_for_final_solution/README.md)
 - [Производительность и дополнительные возможности](docs/performance/docs/performance_and_features.md)
 
 ---
