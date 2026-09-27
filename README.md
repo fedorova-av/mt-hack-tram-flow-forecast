@@ -318,6 +318,6 @@ curl "http://localhost:8000/forecast?route=7&date_from=2025-11-01&date_to=2025-1
 
 <div align="center">
 
-**True DLD · Хакатон Московского транспорта · 2026**
+**DLD · Хакатон Московского транспорта · 2026**
 
 </div>
