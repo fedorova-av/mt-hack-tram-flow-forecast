@@ -1,0 +1,206 @@
+{
+  "model": "route-specific regime-aware robust seasonal ensemble",
+  "seed": 20250926,
+  "stable_weight": 0.75,
+  "cv_weight": 0.25,
+  "final_route_stable_weights": {
+    "1": 0.8,
+    "5": 1.0,
+    "7": 0.9,
+    "11": 1.0,
+    "12": 1.0,
+    "17": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "28": 0.85,
+    "50": 0.95
+  },
+  "share_profile_corrections": {
+    "7": [
+      "raw_mean",
+      32,
+      1.0,
+      0.25
+    ],
+    "25": [
+      "median",
+      8,
+      1.0,
+      0.25
+    ]
+  },
+  "stable_route_configs": {
+    "1": [
+      "regime",
+      "median",
+      20,
+      1.0,
+      "sunday"
+    ],
+    "5": [
+      "recent",
+      "mean",
+      1,
+      1.0,
+      "sunday"
+    ],
+    "7": [
+      "regime",
+      "mean",
+      4,
+      1.0,
+      "sunday"
+    ],
+    "11": [
+      "regime",
+      "trimmed",
+      32,
+      1.0,
+      "sunday"
+    ],
+    "12": [
+      "regime",
+      "trimmed",
+      32,
+      1.0,
+      "sunday"
+    ],
+    "17": [
+      "regime",
+      "median",
+      24,
+      1.0,
+      "sunday"
+    ],
+    "25": [
+      "regime",
+      "ewm",
+      6,
+      0.75,
+      "sunday"
+    ],
+    "26": [
+      "recent",
+      "trimmed",
+      3,
+      1.0,
+      "sunday"
+    ],
+    "28": [
+      "regime",
+      "trimmed",
+      24,
+      1.0,
+      "sunday"
+    ],
+    "50": [
+      "regime",
+      "median",
+      6,
+      1.0,
+      "sunday"
+    ]
+  },
+  "cv_route_configs": {
+    "1": [
+      "regime",
+      "mean",
+      32,
+      1.0,
+      "sunday"
+    ],
+    "5": [
+      "recent",
+      "mean",
+      1,
+      1.0,
+      "sunday"
+    ],
+    "7": [
+      "regime",
+      "mean",
+      32,
+      1.0,
+      "sunday"
+    ],
+    "11": [
+      "regime",
+      "mean",
+      20,
+      1.0,
+      "sunday"
+    ],
+    "12": [
+      "regime",
+      "ewm",
+      24,
+      0.97,
+      "sunday"
+    ],
+    "17": [
+      "regime",
+      "median",
+      20,
+      1.0,
+      "sunday"
+    ],
+    "25": [
+      "regime",
+      "ewm",
+      20,
+      0.93,
+      "sunday"
+    ],
+    "26": [
+      "regime",
+      "trimmed",
+      20,
+      1.0,
+      "sunday"
+    ],
+    "28": [
+      "regime",
+      "mean",
+      20,
+      1.0,
+      "sunday"
+    ],
+    "50": [
+      "regime",
+      "mean",
+      24,
+      1.0,
+      "sunday"
+    ]
+  },
+  "training_end": "2025-10-31",
+  "excluded_tail": "test.csv 2025-11-01",
+  "forecast_interventions": {
+    "working_weekend": "2025-11-01",
+    "route5_start_from_supplied_gtfs": "2025-12-16",
+    "route7_and_route50_weekend_restore": "2025-11-15",
+    "route_t1_start_and_route7_scenario": "2025-11-12; steady factor 0.90"
+  },
+  "validation": [
+    {
+      "fold": "fold_may_jun",
+      "score": 0.860485566530355,
+      "target_sum": 11555908.0
+    },
+    {
+      "fold": "fold_jul_aug",
+      "score": 0.8196800165127152,
+      "target_sum": 10717653.0
+    },
+    {
+      "fold": "fold_sep_oct",
+      "score": 0.8772193941535098,
+      "target_sum": 12754481.0
+    },
+    {
+      "fold": "diagnostic_oct",
+      "score": 0.9116862830511331,
+      "target_sum": 6606787.0
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+numpy>=1.26
+pandas>=2.2
+
+# Optional research dependencies (not required for the selected final model):
+# catboost==1.2.10
+# lightgbm==4.7.0
+# scipy==1.16.3
