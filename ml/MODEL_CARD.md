@@ -1,4 +1,4 @@
-# Model card: v3 seasonal ensemble
+# Final model card: v3 seasonal ensemble
 
 ## Назначение
 
