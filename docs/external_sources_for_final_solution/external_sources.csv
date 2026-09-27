@@ -1,0 +1,12 @@
+status;category;signal;source;url;use_in_v3;implemented_in
+used;competition_data;Historical validations, submission grid, GTFS reference and route-5 start date;Hackathon dataset;https://disk.yandex.ru/d/DiFwlfMOauxjBg;Training data, forecast grid and supplied route-5 date;src/load_data.py | src/features.py | src/interventions.py
+used;calendar;2025 holiday and workday transfers;Government of Russia;https://government.ru/docs/all/155500/;Holiday profiles and working Saturday 2025-11-01;src/features.py | src/interventions.py
+used;network_news;T1 launch on 2025-11-12;Moscow Metro;https://mosmetro.ru/news/details/8259;Start date of scenario effect on route 7;src/interventions.py
+used;network_news;Late-service restrictions for routes 7 and 50;Moscow Department of Transport;https://transport.mos.ru/mostrans/all_news/127065;Conservative reduction of late hours before weekend restoration;src/interventions.py
+used;network_news;Normal weekend routes 7 and 50 restored from 2025-11-15;MSK News citing Moscow Department of Transport;https://msknovosti.ru/news/transport/dvizhenie-tramvaev-vosstanovleno-po-vyhodnym-v-nagatino-i-do-belorusskogo-vokzala/;Restore pre-closure weekend profiles;src/interventions.py
+used;network_news;Weekend late-service restrictions from 2025-12-13;Moscow Department of Transport;https://transport.mos.ru/mostrans/all_news/127620;Adjust hour 23 for routes 7 and 50 on weekends;src/interventions.py
+confirmation_only;network_news;Route 5 launch on 2025-12-16;Moscow Metro;https://mosmetro.ru/news/details/8515;Confirms the date already supplied in GTFS;src/interventions.py
+tested_not_selected;weather;Historical hourly weather ERA5 and ERA5-Land;Open-Meteo Historical Weather API;https://open-meteo.com/en/docs/historical-weather-api;No stable time-validation gain;not used
+tested_not_selected;traffic;Expected peak road congestion on 2025-12-22 to 2025-12-28;Moscow Department of Transport and Traffic Management Center;https://transport.mos.ru/mostrans/all_news/127763;No reliable route-hour coefficient;not used
+tested_not_selected;calendar;Moscow school vacation variants;Education schedule mirrored by Garant;https://base.garant.ru/412348446/53f89421bbdaf741eb2d1ecc4ddb4c33/;No stable aggregate demand effect;not used
+tested_not_selected;operations_news;Timestamped tram disruption and recovery notices;Moscow Department of Transport operational channel;https://t.me/s/DtOperativno;Later experiment did not improve leaderboard;not used
