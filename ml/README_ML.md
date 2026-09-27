@@ -30,7 +30,7 @@
 
 ```text
 .
-├── README.md
+├── README_ML.md
 ├── MODEL_CARD.md
 ├── requirements.txt
 ├── data/
@@ -172,4 +172,4 @@ python scripts/check_submission.py outputs/submission_reproduced.csv
 
 ## Ссылка для формы
 
-После загрузки этой папки в GitHub укажите прямую ссылку на неё. Ссылка должна открываться без авторизации и показывать `README.md`, `models/`, `src/` и `outputs/submission.csv`.
+После загрузки этой папки в GitHub укажите прямую ссылку на неё. Ссылка должна открываться без авторизации и показывать `README_ML.md`, `models/`, `src/` и `outputs/submission.csv`.

@@ -2,8 +2,12 @@ __pycache__/
 *.pyc
 .git/
 .gitignore
-*.md
-!docs/*.md
+ml/
+data_preparation/
+tests/
+docs/performance/app/
+docs/performance/data/
+docs/performance/tests/
 .venv/
 venv/
 tram_env/

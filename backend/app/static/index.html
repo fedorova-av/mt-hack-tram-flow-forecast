@@ -605,7 +605,7 @@
         и
         <a href="https://msknovosti.ru/news/transport/dvizhenie-tramvaev-vosstanovleno-po-vyhodnym-v-nagatino-i-do-belorusskogo-vokzala/" target="_blank" rel="noopener">восстановлении</a>
         движения маршрутов 7 и 50. Полный список — в
-        <a href="/docs/external_sources.md" target="_blank" rel="noopener">docs/external_sources.md</a>.
+        <a href="/project-docs/external_sources_for_final_solution/README.md" target="_blank" rel="noopener">реестре источников</a>.
       </p>
     </div>
     </div>
@@ -739,7 +739,9 @@ function getDateRange() {
   return { from: '2025-11-01', to: '2025-12-31' };
 }
 
-function toISODate(d) { return d.toISOString().slice(0, 10); }
+function toISODate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 

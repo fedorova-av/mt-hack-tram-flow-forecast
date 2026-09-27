@@ -36,7 +36,7 @@ def main() -> None:
     if result[["route", "date", "hour"]].duplicated().any():
         raise ValueError("Duplicate submission keys")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    result.to_csv(args.output, sep=";", index=False, encoding="utf-8")
+    result.to_csv(args.output, sep=";", index=False, encoding="utf-8", lineterminator="\n")
     print(f"wrote {len(result)} rows to {args.output}")
     print(result.groupby("route").prediction.agg(["sum", "mean", "max"]).to_string())
     print("interventions", intervention_audit)

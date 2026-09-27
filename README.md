@@ -135,6 +135,17 @@ flowchart TD
 
 Полный журнал: [`ml/reports/experiments.csv`](ml/reports/experiments.csv) и [`ml/reports/scoremax_report.md`](ml/reports/scoremax_report.md).
 
+## Первичная обработка данных
+
+В [`data_preparation/`](data_preparation/README.md) вынесен воспроизводимый аудит исходных labels и GTFS-справочника: проверка схем и ключей, восстановление почасовой сетки, сравнение политик пропусков, проверка аномального дня маршрута 50 и подготовка географии. Скрипт сохраняет исходные значения и признаки отсутствующих наблюдений.
+
+```bash
+pip install -r data_preparation/requirements.txt
+python data_preparation/prepare.py --dataset /path/to/dataset
+```
+
+Результаты сохраняются в `data_preparation/output/`. Это отдельный исследовательский этап: финальный ML по-прежнему читает исходные labels через `ml/src/load_data.py` и использует политику заполнения пропусков нулями. Подробные допущения и состав файлов — в [инструкции обработки](data_preparation/README.md).
+
 ## Данные и воспроизводимость
 
 Исходный архив задания: [dataset.zip](https://disk.yandex.ru/d/DiFwlfMOauxjBg).
@@ -187,7 +198,7 @@ python scripts/check_submission.py outputs/submission_reproduced.csv
 
 ## Производительность
 
-Локальный HTTP-тест выполнен на MacBook Air M2, 8 CPU / 8 GB RAM, один Uvicorn worker.
+Исторический HTTP-тест оптимизированной версии из `docs/performance/` выполнен на MacBook Air M2, 8 CPU / 8 GB RAM, один Uvicorn worker.
 
 | Сценарий | Нагрузка | RPS | p95 | Ошибки |
 |---|---:|---:|---:|---:|
@@ -197,7 +208,9 @@ python scripts/check_submission.py outputs/submission_reproduced.csv
 | CSV за месяц | 500 запросов, concurrency 20 | 369.6 | 63.2 мс | 0 |
 | XLSX за месяц | 50 запросов, concurrency 3 | 28.6 | 119.6 мс | 0 |
 
-Итого: **9 650 запросов, 0 ошибок**, максимальный RSS — 172.3 MB. Методика и сырые результаты: [`docs/performance/docs/performance_and_features.md`](docs/performance/docs/performance_and_features.md).
+Оптимизация выдачи прогноза перенесена в основной backend. Эти показатели относятся к исходному измерению, а не гарантируют ту же скорость на другом оборудовании.
+
+Итого в исходном тесте: **9 650 запросов, 0 ошибок**, максимальный RSS — 172.3 MB. Методика и сырые результаты: [`docs/performance/docs/performance_and_features.md`](docs/performance/docs/performance_and_features.md).
 
 ## Быстрый запуск
 
@@ -232,6 +245,22 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
+## Проверка после установки
+
+Из корня репозитория:
+
+```bash
+pip install -r requirements-test.txt
+python -m pytest tests -q
+node tests/test_dashboard.cjs
+python ml/scripts/check_submission.py ml/outputs/submission.csv
+```
+
+Node.js нужен только для проверки JavaScript, сам сервис запускается без него.
+Проверка работающего сервиса: `python docs/performance/tests/smoke_test.py --base-url http://127.0.0.1:8000`.
+Документы проекта доступны по `/project-docs/`, Swagger — по `/docs`.
+[Отчёт о проверке поставки](docs/verification.md) описывает выполненные проверки и ограничения среды.
+
 ## API
 
 | Метод | Endpoint | Назначение |
@@ -261,6 +290,11 @@ curl "http://localhost:8000/forecast?route=7&date_from=2025-11-01&date_to=2025-1
 │   ├── data/
 │   ├── README.md
 │   └── requirements.txt
+├── data_preparation/         # аудит labels, пропусков и подготовка географии
+│   ├── prepare.py
+│   ├── README.md
+│   └── requirements.txt
+├── tests/                    # проверки API и границ месяца в дашборде
 ├── ml/                       # training, validation, inference and model artifact
 │   ├── src/
 │   ├── models/
@@ -307,6 +341,7 @@ curl "http://localhost:8000/forecast?route=7&date_from=2025-11-01&date_to=2025-1
 
 ## Документация
 
+- [Первичная обработка данных](data_preparation/README.md)
 - [Backend и дашборд](backend/README.md)
 - [ML: запуск обучения и инференса](ml/README_ML.md)
 - [Model Card](ml/MODEL_CARD.md)

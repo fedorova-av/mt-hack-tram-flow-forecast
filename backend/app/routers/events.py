@@ -7,6 +7,9 @@ routers/events.py — один эндпоинт: что из календарн�
 не редактирует.
 """
 
+from datetime import date
+from app.query_validation import date_range
+
 from fastapi import APIRouter, HTTPException, Query
 from app.events_loader import EventsRegistry
 
@@ -23,8 +26,8 @@ def set_events_registry(registry: EventsRegistry):
 @router.get("/applied")
 def get_applied_events(
     route: int = Query(..., description="Номер маршрута, например 7"),
-    date_from: str = Query(..., description="Дата начала периода, YYYY-MM-DD"),
-    date_to: str = Query(..., description="Дата конца периода, YYYY-MM-DD"),
+    date_from: date = Query(..., description="Дата начала периода, YYYY-MM-DD"),
+    date_to: date = Query(..., description="Дата конца периода, YYYY-MM-DD"),
 ):
     """
     Примеры:
@@ -36,5 +39,6 @@ def get_applied_events(
     if events_registry is None:
         raise HTTPException(status_code=500, detail="Реестр событий не загружен")
 
+    date_from, date_to = date_range(date_from, date_to)
     items = events_registry.applied_for(route, date_from, date_to)
     return {"count": len(items), "items": items}

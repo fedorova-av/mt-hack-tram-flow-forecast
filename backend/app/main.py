@@ -26,6 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from app.data_loader import ForecastData
 from app.geo_loader import GeoData
@@ -34,9 +35,12 @@ from app.routers import forecast, geo, export, events
 
 # Пути к файлам данных. FORECAST_CSV_PATH указывает на финальный прогноз
 # v3 от ML-инженеров (T1-factor 0.90)
-FORECAST_CSV_PATH = "data/test_submission.csv"
-GEO_CSV_PATH = "data/route_stops_map.csv"
-EVENTS_JSON_PATH = "data/calendar_and_events.json"
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+STATIC_DIR = BACKEND_DIR / "app" / "static"
+DOCS_DIR = BACKEND_DIR.parent / "docs"
+FORECAST_CSV_PATH = BACKEND_DIR / "data" / "submission.csv"
+GEO_CSV_PATH = BACKEND_DIR / "data" / "route_stops_map.csv"
+EVENTS_JSON_PATH = BACKEND_DIR / "data" / "calendar_and_events.json"
 
 
 @asynccontextmanager
@@ -95,13 +99,13 @@ app.include_router(events.router)
 
 # Отдаём файлы дашборда (index.html, если появятся картинки/css — тоже сюда).
 # StaticFiles обслуживает файлы из папки app/static/ по пути /static/...
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Отдаём документы из папки docs/ (архитектура, источники, лимиты модели
 # и т.д.) — так ссылки на них с дашборда открываются прямо в браузере,
 # без похода в файлы репозитория. html=False, потому что это обычные
 # .md-файлы, не HTML-страницы для рендеринга браузером.
-app.mount("/docs", StaticFiles(directory="docs"), name="docs")
+app.mount("/project-docs", StaticFiles(directory=DOCS_DIR), name="project-docs")
 
 
 @app.get("/")
@@ -111,7 +115,7 @@ def root():
     Если файл дашборда почему-то не найден, вернёт понятную ошибку,
     а не сломает весь сервер.
     """
-    return FileResponse("app/static/index.html")
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")

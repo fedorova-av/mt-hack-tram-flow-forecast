@@ -4,6 +4,9 @@ routers/export.py — выгрузка прогноза в CSV и XLSX.
 """
 
 import io
+from datetime import date
+from app.query_validation import date_range
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from app.data_loader import ForecastData
@@ -21,9 +24,9 @@ def set_forecast_data(data: ForecastData):
 @router.get("/csv")
 def export_csv(
     route: int | None = Query(default=None),
-    date_from: str | None = Query(default=None),
-    date_to: str | None = Query(default=None),
-    hour: int | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    hour: int | None = Query(default=None, ge=0, le=23),
 ):
     """
     Выгружает отфильтрованный прогноз в CSV-файл — можно открыть в браузере
@@ -37,6 +40,7 @@ def export_csv(
     if forecast_data is None:
         raise HTTPException(status_code=500, detail="Данные прогноза не загружены")
 
+    date_from, date_to = date_range(date_from, date_to)
     filtered = forecast_data.filter(
         route=route, date_from=date_from, date_to=date_to, hour=hour
     )
@@ -55,14 +59,15 @@ def export_csv(
 @router.get("/xlsx")
 def export_xlsx(
     route: int | None = Query(default=None),
-    date_from: str | None = Query(default=None),
-    date_to: str | None = Query(default=None),
-    hour: int | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    hour: int | None = Query(default=None, ge=0, le=23),
 ):
     """То же самое, но в формате Excel (.xlsx) — вторая опция из требований."""
     if forecast_data is None:
         raise HTTPException(status_code=500, detail="Данные прогноза не загружены")
 
+    date_from, date_to = date_range(date_from, date_to)
     filtered = forecast_data.filter(
         route=route, date_from=date_from, date_to=date_to, hour=hour
     )

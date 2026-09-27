@@ -7,19 +7,19 @@ FROM python:3.12-slim
 
 # Рабочая директория ВНУТРИ контейнера — сюда будут скопированы файлы
 # проекта и отсюда будет запускаться сервер.
-WORKDIR /app
+WORKDIR /app/backend
 
 # Сначала копируем ТОЛЬКО requirements.txt и ставим зависимости.
 # Это специально отдельный шаг: Docker кэширует каждый шаг (layer), и
 # если вы поменяете код в app/, но не requirements.txt, при пересборке
 # образа зависимости не будут ставиться заново — сборка будет быстрее.
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Теперь копируем всё остальное: код приложения, данные, документацию.
-COPY app/ ./app/
-COPY data/ ./data/
-COPY docs/ ./docs/
+COPY backend/app/ ./app/
+COPY backend/data/ ./data/
+COPY docs/ /app/docs/
 
 # Порт, на котором внутри контейнера слушает uvicorn. Само по себе EXPOSE
 # ничего не "открывает" наружу — это просто документация для человека,

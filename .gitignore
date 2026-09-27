@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+ml/work/
+ml/predictions/oof_*.csv
+ml/outputs/submission_reproduced.csv
+data_preparation/output/
+.verification/

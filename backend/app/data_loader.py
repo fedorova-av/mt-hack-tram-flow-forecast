@@ -31,7 +31,7 @@ class ForecastData:
         if not path.exists():
             raise FileNotFoundError(
                 f"Не найден файл с прогнозами: {csv_path}. "
-                f"Положи test_submission.csv (или submission.csv) в папку data/."
+                f"Положи submission.csv в папку backend/data/."
             )
 
         df = pd.read_csv(path, sep=";", encoding="utf-8")
@@ -47,6 +47,25 @@ class ForecastData:
                 f"В файле {csv_path} не хватает колонок: {missing}. "
                 f"Ожидается формат: route;date;hour;prediction"
             )
+
+        # Validate before the fast JSON response bypasses per-row Pydantic.
+        import numpy as np
+        if df.empty or df[list(required_columns)].isna().any().any():
+            raise ValueError("Forecast contains empty or missing values")
+        for column in ["route", "hour", "prediction"]:
+            df[column] = pd.to_numeric(df[column], errors="raise")
+            if not np.isfinite(df[column]).all():
+                raise ValueError(f"Non-finite forecast column: {column}")
+        if any((df[c] % 1 != 0).any() for c in ["route", "hour"]):
+            raise ValueError("Route and hour must be integers")
+        if not df.hour.between(0, 23).all() or (df.prediction < 0).any():
+            raise ValueError("Invalid hour or negative prediction")
+        dates = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="raise")
+        if not dates.dt.strftime("%Y-%m-%d").eq(df["date"]).all():
+            raise ValueError("Dates must use YYYY-MM-DD")
+        if df.duplicated(["route", "date", "hour"]).any():
+            raise ValueError("Duplicate forecast keys")
+        df = df[["route", "date", "hour", "prediction"]].copy()
 
         # Приводим типы явно, чтобы не гадать, что там подхватилось из CSV
         df["route"] = df["route"].astype(int)

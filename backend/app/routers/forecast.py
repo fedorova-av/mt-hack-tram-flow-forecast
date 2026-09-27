@@ -11,8 +11,12 @@ routers/forecast.py — эндпоинты, связанные с прогноз
   Потом мы "подключаем" роутер в main.py одной строкой.
 """
 
+from datetime import date
+from app.query_validation import date_range
+
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas import ForecastResponse, ForecastPoint, RouteSummary
+from fastapi.responses import Response
+from app.schemas import ForecastResponse, RouteSummary
 from app.data_loader import ForecastData
 
 # APIRouter — это "мини-приложение", в которое мы добавляем эндпоинты.
@@ -48,10 +52,10 @@ def get_forecast(
     route: int | None = Query(
         default=None, description="Номер маршрута, например 7"
     ),
-    date_from: str | None = Query(
+    date_from: date | None = Query(
         default=None, description="Дата начала периода, формат YYYY-MM-DD"
     ),
-    date_to: str | None = Query(
+    date_to: date | None = Query(
         default=None, description="Дата конца периода, формат YYYY-MM-DD"
     ),
     hour: int | None = Query(
@@ -74,21 +78,18 @@ def get_forecast(
     if forecast_data is None:
         raise HTTPException(status_code=500, detail="Данные прогноза не загружены")
 
+    date_from, date_to = date_range(date_from, date_to)
     filtered = forecast_data.filter(
         route=route, date_from=date_from, date_to=date_to, hour=hour
     )
 
-    items = [
-        ForecastPoint(
-            route=int(row["route"]),
-            date=row["date"],
-            hour=int(row["hour"]),
-            prediction=float(row["prediction"]),
-        )
-        for _, row in filtered.iterrows()
-    ]
-
-    return ForecastResponse(count=len(items), items=items)
+    # Данные полностью проверяются и типизируются один раз при старте сервиса.
+    # Для ответа используем векторизованную сериализацию pandas, а не iterrows
+    # + 14 640 отдельных Pydantic-объектов. Формат JSON остаётся тем же, но
+    # полная выдача становится на порядок быстрее и создаёт меньше объектов.
+    items_json = filtered.to_json(orient="records", force_ascii=False)
+    payload = f'{{"count":{len(filtered)},"items":{items_json}}}'
+    return Response(content=payload, media_type="application/json")
 
 
 @router.get("/routes", response_model=list[RouteSummary])
